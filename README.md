@@ -1,4 +1,4 @@
-# Convolutional-Transformer
+# Dynamic Modeling of Marine Fields with a Convolutional Transformer
 
 ## Overview
 
@@ -22,7 +22,7 @@ To replicate the experiments and explore the results, follow these steps:
 1. Clone the repository:
 
 ```
-git clone https://github.com/your-username/your-thesis-repo.git
+git clone https://github.com/inesfrodrigues/Convolutional-Transformer.git
 ```
 2. Navigate to the `code/` directory:
 
