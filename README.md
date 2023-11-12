@@ -11,7 +11,6 @@ Planet Earth is a blue planet, with the ocean covering over two-thirds of our wo
 ## Repository Structure
 
 - `code/`: Contains the implementation of the Convolutional Vision Transformer model.
-- `data/`: Includes the MedBFM dataset and any additional data used in the experiments.
 - `results/`: Houses visualizations and analysis results obtained from running the model.
 - `docs/`: Documentation files, including the thesis document and any related resources.
 
