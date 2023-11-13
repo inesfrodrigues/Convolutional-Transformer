@@ -1,4 +1,4 @@
-# Dynamic Modeling of 3-Dimensional Marine Fields: Unleasing the Power of Convolutional Transfomers for Advanced Environmental Analysis
+# Dynamic Modeling of 3-Dimensional Marine Fields: Unleashing the Power of Convolutional Transfomers for Advanced Environmental Analysis
 
 ## Overview
 
