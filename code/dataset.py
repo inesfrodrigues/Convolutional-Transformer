@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 import numpy as np 
 from PIL import Image
 from plot_save_tensor import *
-from mean_std_value import MV_pixel, std_pixel
+from mean_std_pixel import MV_pixel, std_pixel
 
 # 1: temperature, 2: salinity, 3: oxygen, 4: chlorophyll-a, 5: net primary production, 6: phosphate, 7: nitrate, 8: medium particulate carbon
 target_variable = 3
