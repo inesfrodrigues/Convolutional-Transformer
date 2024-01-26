@@ -7,11 +7,11 @@ number_channel = 8 # 1: temperature, 2: salinity, 3: oxygen, 4: chlorophyll-a, 5
 latitude_interval = (36, 44)
 longitude_interval = (2, 9)
 depth_interval = (0, 600)
-year_interval = (2016, 2017)
-year = 2016
+year_interval = (2015, 2016)
+year = 2015
 resolution = (12, 12, 20)
 
-kindof = 'model2016'
+kindof = 'model2015'
 
-if kindof == 'model2016':
+if kindof == 'model2015':
     channels = [0, 1, 2, 3, 4, 5, 6, 7]
