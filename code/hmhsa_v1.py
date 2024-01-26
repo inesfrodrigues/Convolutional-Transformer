@@ -108,7 +108,7 @@ class HMHSA(nn.Module):
         if self.grid_size > 1:
             global_attention_x = global_attention_x + attention_x
 
-        x = self.drop(self.proj(global_attention_x)).
+        x = self.drop(self.proj(global_attention_x))
         
         return x
 
