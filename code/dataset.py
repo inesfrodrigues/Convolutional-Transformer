@@ -23,7 +23,7 @@ class SEADataset(Dataset):
         for ptFiles in list_ptFIles:
             if ptFiles != 'datetime_2015.5.pt' and ptFiles != 'datetime_2015.49.pt' and ptFiles != 'datetime_2015.51.pt' and ptFiles != 'datetime_2015.52.pt':
                 my_tensor = torch.load(directory_float + ptFiles)
-                model_tensor.append(my_tensor[:, :, :-1, :, :])
+                model_tensor.append(my_tensor[:, :, :, :, :])
         
         list_tensor = model_tensor
 
@@ -39,7 +39,6 @@ class SEADataset(Dataset):
         for tensor in list_tensor:
             tensor = (tensor - mean_tensor) / std_tensor
             tensor[:, :, -1, :, :] = tensor[:, :, -2, :, :]
-            tensor = tensor[:, :, :, :, 1:-1]
             tensor = tensor.float()
             normalized_list.append(tensor)
         self.list_files = normalized_list
@@ -56,8 +55,8 @@ class SEADataset(Dataset):
         data = self.list_files[index]
         N, C, D, H, W = data.shape
         ds = data.reshape(C, D, H, W)
-        X = ds[:3, :30, :30, :30]
-        y = ds[target_variable, :30, :30, :30]
+        X = ds[:3, :, :, :]
+        y = ds[target_variable, :, :, :]
         y = torch.unsqueeze(y, 0)
 
         return X,y            
