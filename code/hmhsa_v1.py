@@ -20,7 +20,7 @@ drop_path_rate = 0.1
 class Upsample(nn.Module): 
     def __init__(self, in_channels, out_channels, kernel_size, padding = 0, stride = 1): 
         super().__init__()
-        self.convT = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride = stride, padding = padding)
+        self.convT = nn.ConvTranspose3d(in_channels, out_channels, kernel_size, stride = stride, padding = padding)
         self.bn = nn.GroupNorm(1, out_channels, eps = 1e-6)
 
     def forward(self, x):
@@ -35,7 +35,7 @@ class Upsample(nn.Module):
 class Downsample(nn.Module): 
     def __init__(self, in_channels, out_channels, kernel_size, stride = 1, padding = 0): 
         super().__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride = stride, padding = padding)
+        self.conv = nn.Conv3d(in_channels, out_channels, kernel_size, stride = stride, padding = padding)
         self.bn = nn.GroupNorm(1, out_channels, eps = 1e-6)
 
     def forward(self, x):
@@ -48,7 +48,7 @@ class Downsample(nn.Module):
 
 
 class HMHSA(nn.Module):
-    def __init__(self, dim, head, grid_size, ds_ratio, drop = 0.):
+    def __init__(self, dim, head, grid_size, ds_ratio, drop = 0.): 
         super().__init__()
         self.num_heads = dim // head
         self.grid_size = grid_size
@@ -57,40 +57,40 @@ class HMHSA(nn.Module):
         
         assert (self.num_heads * head == dim), "Dim needs to be divisible by Head."
         
-        self.qkv = nn.Conv2d(dim, dim * 3, 1) 
-        self.proj = nn.Conv2d(dim, dim, 1) 
+        self.qkv = nn.Conv3d(dim, dim * 3, 1) 
+        self.proj = nn.Conv3d(dim, dim, 1) 
         self.norm = nn.GroupNorm(1, dim, eps = 1e-6)
-        self.drop = nn.Dropout2d(drop, inplace = True)
+        self.drop = nn.Dropout3d(drop, inplace = True)
 
         if self.grid_size > 1:
             self.attention_norm = nn.GroupNorm(1, dim, eps = 1e-6)
-            self.avg_pool = nn.AvgPool2d(ds_ratio, stride = ds_ratio)
+            self.avg_pool = nn.AvgPool3d(ds_ratio, stride = ds_ratio)
             self.ds_norm = nn.GroupNorm(1, dim, eps = 1e-6)
-            self.q = nn.Conv2d(dim, dim, 1)
-            self.kv = nn.Conv2d(dim, dim * 2, 1) 
+            self.q = nn.Conv3d(dim, dim, 1)
+            self.kv = nn.Conv3d(dim, dim * 2, 1)
         
-    def forward(self, x):
-        N, C, H, W = x.shape 
+    def forward(self, x): 
+        N, C, H, W, D = x.shape 
         qkv = self.qkv(self.norm(x))
 
         if self.grid_size > 1:
-            grid_h, grid_w= H // self.grid_size, W // self.grid_size 
-            qkv = qkv.reshape(N, 3, self.num_heads, self.head, grid_h, self.grid_size, grid_w, self.grid_size) 
-            qkv = qkv.permute(1, 0, 2, 4, 6, 5, 7, 3) 
-            qkv = qkv.reshape(3, -1, self.grid_size * self.grid_size, self.head)
+            grid_h, grid_w, grid_d = H // self.grid_size, W // self.grid_size, D // self.grid_size 
+            qkv = qkv.reshape(N, 3, self.num_heads, self.head, grid_h, self.grid_size, grid_w, self.grid_size, grid_d, self.grid_size)
+            qkv = qkv.permute(1, 0, 2, 4, 6, 8, 5, 7, 9, 3)
+            qkv = qkv.reshape(3, -1, self.grid_size * self.grid_size * self.grid_size, self.head)
             query, key, value = qkv[0], qkv[1], qkv[2]
         
             attention = (query / (self.dim ** (1/2))) @ key.transpose(-2, -1)
             attention = attention.softmax(dim = -1)
 
-            attention_x = (attention @ value).reshape(N, self.num_heads, grid_h, grid_w, self.grid_size, self.grid_size, self.head)
-            attention_x = attention_x.permute(0, 1, 6, 2, 4, 3, 5).reshape(N, C, H, W)
+            attention_x = (attention @ value).reshape(N, self.num_heads, grid_h, grid_w, grid_d, self.grid_size, self.grid_size, self.grid_size, self.head)
+            attention_x = attention_x.permute(0, 1, 8, 2, 5, 3, 6, 4, 7).reshape(N, C, H, W, D)
             attention_x = self.attention_norm(x + attention_x)
 
             kv = self.kv(self.ds_norm(self.avg_pool(attention_x)))
 
             query = self.q(attention_x).reshape(N, self.num_heads, self.head, -1)
-            query = query.transpose(-2, -1)
+            query = query.transpose(-2, -1) 
             kv = kv.reshape(N, 2, self.num_heads, self.head, -1)
             kv = kv.permute(1, 0, 2, 4, 3) 
             key, value = kv[0], kv[1]
@@ -103,13 +103,13 @@ class HMHSA(nn.Module):
         attention = (query / (self.dim ** (1/2))) @ key.transpose(-2, -1)
         attention = attention.softmax(dim = -1)
 
-        global_attention_x = (attention @ value).transpose(-2, -1).reshape(N, C, H, W) # concatenate
+        global_attention_x = (attention @ value).transpose(-2, -1).reshape(N, C, H, W, D) 
 
         if self.grid_size > 1:
             global_attention_x = global_attention_x + attention_x
 
         x = self.drop(self.proj(global_attention_x))
-        
+
         return x
 
 
@@ -123,15 +123,15 @@ class MBConv(nn.Module):
         super().__init__()
         self.conv1 = nn.Sequential(
             nn.GroupNorm(1, in_channels, eps = 1e-6),
-            nn.Conv2d(in_channels, expanded_channels, kernel_size = 1, padding = 0, bias = False),
+            nn.Conv3d(in_channels, expanded_channels, kernel_size = 1, padding = 0, bias = False),
             act_layer(inplace = True)
         )              
         self.conv2 = nn.Sequential(
-            nn.Conv2d(expanded_channels, expanded_channels, kernel_size = kernel_size, padding = padding, groups = expanded_channels, bias = False),
+            nn.Conv3d(expanded_channels, expanded_channels, kernel_size = kernel_size, padding = padding, groups = expanded_channels, bias = False),
             act_layer(inplace = True)
         )
         self.conv3 = nn.Sequential(
-            nn.Conv2d(expanded_channels, out_channels, kernel_size = 1, padding = 0, bias = False),
+            nn.Conv3d(expanded_channels, out_channels, kernel_size = 1, padding = 0, bias = False),
             nn.GroupNorm(1, out_channels, eps = 1e-6)
         )
         self.drop = nn.Dropout2d(drop, inplace = True)
@@ -169,16 +169,16 @@ class HAT_Net(nn.Module):
 
         # sequential CNNs
         self.CNN = nn.Sequential(
-            nn.ConvTranspose2d(in_channels = 3, out_channels = 3, kernel_size = 4, padding = 2, stride = 2),
+            nn.ConvTranspose3d(in_channels = 3, out_channels = 3, kernel_size = 4, padding = 2, stride = 2),
             nn.GroupNorm(3, 3, eps = 1e-6),
             act_layer(inplace = True),
-            nn.ConvTranspose2d(in_channels = 3, out_channels = 3, kernel_size = 4, padding = 2, stride = 2),
+            nn.ConvTranspose3d(in_channels = 3, out_channels = 3, kernel_size = 4, padding = 2, stride = 2),
             nn.GroupNorm(3, 3, eps = 1e-6),
             act_layer(inplace = True),
-            nn.Conv2d(in_channels = 3, out_channels = 16, kernel_size = 4, stride = 2, padding = 2),
+            nn.Conv3d(in_channels = 3, out_channels = 16, kernel_size = 4, stride = 2, padding = 2),
             nn.GroupNorm(1, 16, eps = 1e-6),
             act_layer(inplace = True),
-            nn.Conv2d(in_channels = 16, out_channels = 64, kernel_size = 2, stride = 2, padding = 0),
+            nn.Conv3d(in_channels = 16, out_channels = 64, kernel_size = 2, stride = 2, padding = 0),
             )
 
         # block -> H-MSHA + MLP
@@ -202,16 +202,16 @@ class HAT_Net(nn.Module):
         self.us3 = Upsample(in_channels = dims[1], out_channels = dims[0], kernel_size = 5)
 
         self.TCNN = nn.Sequential(
-            nn.ConvTranspose2d(in_channels = dims[0], out_channels = 16, kernel_size = 2, stride = 2, padding = 0),
+            nn.ConvTranspose3d(in_channels = dims[0], out_channels = 16, kernel_size = 2, stride = 2, padding = 0),
             nn.GroupNorm(1, 16, eps = 1e-6),
             act_layer(inplace = True),
-            nn.ConvTranspose2d(in_channels = 16, out_channels = 1, kernel_size = 4, stride = 2, padding = 2),
+            nn.ConvTranspose3d(in_channels = 16, out_channels = 1, kernel_size = 4, stride = 2, padding = 2),
             nn.GroupNorm(1, 1, eps = 1e-6),
             act_layer(inplace = True),
-            nn.Conv2d(in_channels = 1, out_channels = 1, kernel_size = 4, stride = 2, padding = 2),
+            nn.Conv3d(in_channels = 1, out_channels = 1, kernel_size = 4, stride = 2, padding = 2),
             nn.GroupNorm(1, 1, eps = 1e-6),
             act_layer(inplace = True),
-            nn.Conv2d(in_channels = 1, out_channels = 1, kernel_size = 4, stride = 2, padding = 2),
+            nn.Conv3d(in_channels = 1, out_channels = 1, kernel_size = 4, stride = 2, padding = 2),
         )
                 
         self.apply(self._init_weights)
@@ -226,7 +226,9 @@ class HAT_Net(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
     def forward(self, x):
+        print(x.shape)
         x = self.CNN(x)
+        print(x.shape)
         for block in self.blocks[0]:
             x = block(x)
         x = self.ds1(x)
