@@ -226,9 +226,7 @@ class HAT_Net(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
     def forward(self, x):
-        print(x.shape)
         x = self.CNN(x)
-        print(x.shape)
         for block in self.blocks[0]:
             x = block(x)
         x = self.ds1(x)
