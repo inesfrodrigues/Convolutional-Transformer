@@ -134,7 +134,7 @@ class MBConv(nn.Module):
             nn.Conv3d(expanded_channels, out_channels, kernel_size = 1, padding = 0, bias = False),
             nn.GroupNorm(1, out_channels, eps = 1e-6)
         )
-        self.drop = nn.Dropout2d(drop, inplace = True)
+        self.drop = nn.Dropout3d(drop, inplace = True)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -217,11 +217,11 @@ class HAT_Net(nn.Module):
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
-        if isinstance(m, (nn.Linear, nn.Conv2d)):
+        if isinstance(m, (nn.Linear, nn.Conv3d)):
             trunc_normal_(m.weight, std = .02)
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
-        elif isinstance(m, (nn.LayerNorm, nn.BatchNorm2d, nn.GroupNorm)):
+        elif isinstance(m, (nn.LayerNorm, nn.BatchNorm3d, nn.GroupNorm)):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
 
