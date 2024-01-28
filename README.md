@@ -6,7 +6,7 @@ Welcome to the repository for the thesis project on simulating marine biogeochem
 
 ## Thesis Abstract
 
-Planet Earth is a blue planet, with the ocean covering over two-thirds of our world. This thesis explores the relationship between humanity and the water, delving into the complexities of marine biogeochemistry. Using a Convolutional Vision Transformer with Hierarchical Attention and the MedBFM dataset, the research aims to simulate critical variables such as chlorophyll, net primary production, and nutrient concentrations.
+Planet Earth is a blue planet, with the ocean covering over two-thirds of our world. This thesis explores the relationship between humanity and the water, delving into the complexities of marine biogeochemistry. Using a Convolutional Vision Transformer with Hierarchical Attention and the MedBFM dataset, the research aims to simulate critical variables such as chlorophyll-a, net primary production, and nutrient concentrations.
 
 ## Repository Structure
 
