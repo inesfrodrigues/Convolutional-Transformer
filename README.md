@@ -40,5 +40,5 @@ python3.8 main.py
 ## Future Works
 The project's future works include:
 
-Simulating the entire Mediterranean Sea by conducting multiple simulations for various small regions.
-Exploring alternative model architectures, particularly if computational resources allow simulating the entire Mediterranean Sea in one go.
+Simulating the entire Western Mediterranean Sea by conducting multiple simulations for various small regions.
+Exploring alternative model architectures, particularly if computational resources allow simulating the entire Western Mediterranean Sea in one go.
